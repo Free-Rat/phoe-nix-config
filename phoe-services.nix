@@ -64,7 +64,7 @@ in {
     COSMOSDB_ENDPOINT=
     COSMOSDB_KEY=
     COSMOSDB_DATABASE_NAME=project-healer
-    CONFIG_REPO_URL=https://github.com/Free-Rat/phoe-nix-config
+    CONFIG_REPO_URL=git@github.com:Free-Rat/phoe-nix-config.git
     CONFIG_REPO_BRANCH=main
     CONFIG_REPO_PATH=/var/lib/phoe-nix-config-repo
     OLLAMA_BASE_URL=http://10.0.2.2:11434
