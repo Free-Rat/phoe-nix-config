@@ -3,21 +3,27 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    phoe-nix-log-service.url = "path:/home/freerat/projects/phoe-nix/log_service";
+    phoe-nix-local-agent.url = "path:/home/freerat/projects/phoe-nix/local_agent";
   };
 
   outputs = { self, nixpkgs, ... }@inputs: {
     nixosConfigurations = {
       nixos = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
         modules = [
           ./configuration.nix
+          ./phoe-services.nix
         ];
       };
 
       vm = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
         modules = [
           ./configuration.nix
+          ./phoe-services.nix
           {
             virtualisation.vmVariant = {
               virtualisation.memorySize = 4096;

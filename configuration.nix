@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  imports = [ ./hardware-configuration.nix ];
+  imports = builtins.filter builtins.pathExists [ ./hardware-configuration.nix ];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -16,6 +16,9 @@
   users.users.user = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFyt0Y9Q14Yui8hUpPd0mfPSqEBcafylUmT4ItfRYxXG maliketh"
+    ];
   };
 
   environment.systemPackages = with pkgs; [
@@ -26,6 +29,7 @@
   ];
 
   services.openssh.enable = true;
+  users.users.user.initialPassword = "user";
 
   system.stateVersion = "24.11";
 }

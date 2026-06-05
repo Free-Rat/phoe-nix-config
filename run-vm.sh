@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FLAKE="$SCRIPT_DIR"
 
 echo "Building NixOS VM..."
-nix build "$FLAKE#vm" --no-write-lock-file
+nix build "$FLAKE#vm" --no-write-lock-file --impure
 
 echo "Starting VM..."
 echo "  SSH: ssh -p 2222 user@localhost"
