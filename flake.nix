@@ -29,9 +29,8 @@
             boot.loader.efi.canTouchEfiVariables = nixpkgs.lib.mkForce false;
             boot.loader.grub.enable = nixpkgs.lib.mkForce false;
             fileSystems."/" = nixpkgs.lib.mkForce {
-              device = "none";
-              fsType = "tmpfs";
-              options = [ "mode=755" "size=2G" ];
+              device = "/dev/disk/by-label/nixos";
+              fsType = "ext4";
             };
           }
         ];
