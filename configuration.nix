@@ -13,9 +13,12 @@
 
   i18n.defaultLocale = "en_US.UTF-8";
 
+  users.mutableUsers = false;
+
   users.users.user = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
+    password = "user";
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFyt0Y9Q14Yui8hUpPd0mfPSqEBcafylUmT4ItfRYxXG maliketh"
     ];
@@ -29,7 +32,7 @@
   ];
 
   services.openssh.enable = true;
-  users.users.user.initialPassword = "user";
+  security.sudo.wheelNeedsPassword = false;
 
   system.stateVersion = "24.11";
 }

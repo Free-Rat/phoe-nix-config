@@ -1,39 +1,30 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 let
-  phoeNixRoot = builtins.path {
-    path = /home/freerat/projects/phoe-nix;
-    name = "phoe-nix-source";
-  };
+  system = pkgs.stdenv.hostPlatform.system;
   logServiceDefaultEnvPath = "/etc/phoe-nix/log-service.env.defaults";
   logServiceOverrideEnvPath = "/etc/phoe-nix/log-service.env";
   localAgentDefaultEnvPath = "/etc/phoe-nix/local-agent.env.defaults";
   localAgentOverrideEnvPath = "/etc/phoe-nix/local-agent.env";
-  logServicePython = pkgs.python311.withPackages (ps: with ps; [
-    azure-storage-blob
-    pydantic
-    systemd
-  ]);
-  localAgentPython = pkgs.python311.withPackages (ps: with ps; [
-    azure-cosmos
-    azure-identity
-    azure-servicebus
-    pydantic
-  ]);
+  githubKnownHostsPath = "/etc/phoe-nix/github-known_hosts";
+  localAgentRepoKeyPath = "/var/lib/phoe-nix-secrets/local-agent-repo-key";
+  localAgentGitSshCommand = "ssh -i ${localAgentRepoKeyPath} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${githubKnownHostsPath}";
+  rebuildTarget = "/var/lib/phoe-nix-config-repo#simulation";
+  rebuildCommand = ''NIX_CONFIG="experimental-features = nix-command flakes" nixos-rebuild test --flake ${rebuildTarget} --impure'';
+  logServicePackage = inputs.phoe-nix-log-service.packages.${system}.default;
+  localAgentPackage = inputs.phoe-nix-local-agent.packages.${system}.default;
   logServiceRunner = pkgs.writeShellApplication {
     name = "phoe-log-service-runner";
-    runtimeInputs = [ logServicePython pkgs.systemd ];
+    runtimeInputs = [ logServicePackage pkgs.systemd ];
     text = ''
-      export PYTHONPATH="${phoeNixRoot}/log_service/src"
-      exec ${logServicePython}/bin/python -m log_service.main -s sshd
+      exec ${logServicePackage}/bin/log_service -s sshd
     '';
   };
   localAgentRunner = pkgs.writeShellApplication {
     name = "phoe-local-agent-runner";
-    runtimeInputs = [ localAgentPython pkgs.git pkgs.nix pkgs.curl pkgs.coreutils pkgs.bash ];
+    runtimeInputs = [ localAgentPackage pkgs.git pkgs.nix pkgs.curl pkgs.coreutils pkgs.bash pkgs.openssh ];
     text = ''
-      export PYTHONPATH="${phoeNixRoot}/local_agent/src:${phoeNixRoot}/schemas/src"
-      exec ${localAgentPython}/bin/python -m local_agent.main
+      exec ${localAgentPackage}/bin/local_agent
     '';
   };
   sharedPath = with pkgs; [
@@ -43,8 +34,13 @@ let
     git
     nix
     nixos-rebuild
+    openssh
   ];
 in {
+  environment.etc."phoe-nix/github-known_hosts".text = ''
+    github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+  '';
+
   environment.etc."phoe-nix/log-service.env.defaults".text = ''
     TOKEN_SERVICE_URL=http://127.0.0.1:9999/api/token
     SPOOL_DIRECTORY=/var/lib/phoe-nix-log-service
@@ -67,8 +63,11 @@ in {
     CONFIG_REPO_URL=git@github.com:Free-Rat/phoe-nix-config.git
     CONFIG_REPO_BRANCH=main
     CONFIG_REPO_PATH=/var/lib/phoe-nix-config-repo
+    GIT_SSH_COMMAND='${localAgentGitSshCommand}'
+    REBUILD_TEST_COMMAND='${rebuildCommand}'
+    REBUILD_SWITCH_COMMAND='${rebuildCommand}'
     OLLAMA_BASE_URL=http://10.0.2.2:11434
-    OLLAMA_MODEL=gemma4:e4b
+    OLLAMA_MODEL=gpt-oss:20b
     OBSERVE_INTERVAL_SECONDS=10
     REPO_REFRESH_SECONDS=300
   '';
@@ -82,7 +81,19 @@ in {
     # Leave COSMOSDB_KEY empty when using managed identity or other DefaultAzureCredential sources.
     COSMOSDB_KEY=
     COSMOSDB_DATABASE_NAME=project-healer
+    CONFIG_REPO_URL=git@github.com:Free-Rat/phoe-nix-config.git
+    CONFIG_REPO_BRANCH=main
+    CONFIG_REPO_PATH=/var/lib/phoe-nix-config-repo
+    GIT_SSH_COMMAND='${localAgentGitSshCommand}'
+    REBUILD_TEST_COMMAND='${rebuildCommand}'
+    REBUILD_SWITCH_COMMAND='${rebuildCommand}'
     OLLAMA_BASE_URL=http://10.0.2.2:11434
+    OLLAMA_MODEL=gpt-oss:20b
+  '';
+
+  environment.etc."phoe-nix/local-agent-repo-key.example".text = ''
+    Install a GitHub deploy key private key at ${localAgentRepoKeyPath} with mode 0600.
+    The matching public key should be registered as a write-enabled deploy key on phoe-nix-config.
   '';
 
   environment.systemPackages = [

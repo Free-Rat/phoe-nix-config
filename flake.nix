@@ -18,6 +18,20 @@
         ];
       };
 
+      simulation = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./configuration.nix
+          ./phoe-services.nix
+          {
+            boot.loader.systemd-boot.enable = nixpkgs.lib.mkForce false;
+            boot.loader.efi.canTouchEfiVariables = nixpkgs.lib.mkForce false;
+            boot.loader.grub.enable = nixpkgs.lib.mkForce false;
+          }
+        ];
+      };
+
       vm = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
@@ -25,11 +39,17 @@
           ./configuration.nix
           ./phoe-services.nix
           {
+            boot.loader.systemd-boot.enable = nixpkgs.lib.mkForce false;
+            boot.loader.efi.canTouchEfiVariables = nixpkgs.lib.mkForce false;
+            boot.loader.grub.enable = nixpkgs.lib.mkForce false;
+
             virtualisation.vmVariant = {
               virtualisation.memorySize = 4096;
               virtualisation.cores = 4;
               virtualisation.diskSize = 20000;
               virtualisation.graphics = false;
+              virtualisation.writableStore = true;
+              virtualisation.writableStoreUseTmpfs = false;
               virtualisation.forwardPorts = [
                 {
                   from = "host";
