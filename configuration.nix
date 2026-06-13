@@ -31,6 +31,7 @@
     git
     sl
     figlet
+    toilet
   ];
 
   services.openssh.enable = true;
