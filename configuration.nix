@@ -29,6 +29,7 @@
     wget
     curl
     git
+    sl
   ];
 
   services.openssh.enable = true;
