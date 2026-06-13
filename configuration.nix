@@ -30,6 +30,7 @@
     curl
     git
     sl
+    figlet
   ];
 
   services.openssh.enable = true;
